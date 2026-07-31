@@ -1,0 +1,64 @@
+"use client";
+
+import { AnimatePresence } from "framer-motion";
+import { useCallback } from "react";
+import { UploadZone } from "@/components/documents/upload-zone";
+import { FileUploadItem } from "@/components/documents/file-upload-item";
+import { useFileUpload } from "@/hooks/use-file-upload";
+import { FadeIn } from "@/components/motion/fade-in";
+import { Upload, CheckCircle2 } from "lucide-react";
+
+export default function UploadPage() {
+  const { items, addFiles, uploadAll, removeItem } = useFileUpload();
+
+  const handleFilesSelected = useCallback(
+    async (files: File[]) => {
+      const newItems = addFiles(files);
+      await uploadAll(newItems);
+    },
+    [addFiles, uploadAll]
+  );
+
+  const allDone = items.length > 0 && items.every((i) => i.status === "done");
+
+  return (
+    <main className="min-h-screen bg-gray-950 text-white px-6 py-12">
+      <div className="max-w-2xl mx-auto">
+        <FadeIn>
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 rounded-xl bg-violet-600/20 flex items-center justify-center">
+              <Upload className="w-5 h-5 text-violet-400" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-white">Upload Documents</h1>
+              <p className="text-sm text-gray-400">PDF, TXT, MD, DOCX, CSV — up to 50MB each</p>
+            </div>
+          </div>
+        </FadeIn>
+
+        <FadeIn delay={0.1}>
+          <UploadZone onFilesSelected={handleFilesSelected} />
+        </FadeIn>
+
+        {items.length > 0 && (
+          <FadeIn delay={0.2} className="mt-6 space-y-3">
+            <AnimatePresence>
+              {items.map((item) => (
+                <FileUploadItem key={item.id} item={item} onRemove={removeItem} />
+              ))}
+            </AnimatePresence>
+
+            {allDone && (
+              <FadeIn>
+                <div className="flex items-center gap-2 text-emerald-400 text-sm font-medium mt-4">
+                  <CheckCircle2 className="w-4 h-4" />
+                  All documents ingested successfully!
+                </div>
+              </FadeIn>
+            )}
+          </FadeIn>
+        )}
+      </div>
+    </main>
+  );
+}
