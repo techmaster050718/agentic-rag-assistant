@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any
+from langchain_core.runnables import RunnableConfig
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 
@@ -17,7 +18,9 @@ _llm = ChatGoogleGenerativeAI(
     temperature=settings.LLM_TEMPERATURE, 
     google_api_key=settings.GOOGLE_API_KEY, 
     convert_system_message_to_human=True,
-    streaming=True
+    streaming=True,
+    max_retries=1,
+    timeout=15.0
 )
 
 
@@ -46,9 +49,12 @@ async def retrieve_node(state: AgentState) -> dict[str, Any]:
         query_embedding = await embeddings_model.aembed_query(state["query"])
         
         store = vector_store.get_vector_store()
+        document_ids = state.get("document_ids", [])
+        where = {"document_id": {"$in": document_ids}} if document_ids else None
         results = store.search(
             query_embedding=query_embedding,
             top_k=settings.RETRIEVAL_TOP_K,
+            where=where,
         )
         
         chunks = [
@@ -82,18 +88,34 @@ async def compare_node(state: AgentState) -> dict[str, Any]:
             "agent_steps": steps,
         }
 
-    # Build context for LLM evaluation
+    # ── Fast-path: skip LLM if any chunk has a good similarity score.
+    # This avoids burning API quota on a binary yes/no that cosine similarity
+    # already answers reliably. Score is 1 - cosine_distance (ChromaDB cosine space).
+    best_score = max((c.get("score", 0.0) for c in chunks), default=0.0)
+    if best_score >= 0.3:
+        logger.debug(f"[compare_node] Fast-path: best_score={best_score:.3f} → sufficient")
+        steps.append(f"compare: context is sufficient (score={best_score:.2f})")
+        return {"context_sufficient": True, "agent_steps": steps}
+
+    # Build context for LLM evaluation (only for low-confidence retrieval)
     context = "\n\n".join(c["content"][:500] for c in chunks[:3])
     prompt = f"""Evaluate if the following context is sufficient to answer the query.
 Query: {state['query']}
 Context:
 {context}
 
-# Removed prefix instruction"""
+Reply with exactly one word: SUFFICIENT or INSUFFICIENT."""
 
-    response = await _llm.ainvoke(prompt)
-    verdict = response.content.strip().upper()
-    is_sufficient = "SUFFICIENT" in verdict
+    try:
+        response = await _llm.ainvoke(prompt)
+        verdict = response.content.strip().upper()
+        is_sufficient = "SUFFICIENT" in verdict
+    except Exception as exc:
+        logger.warning(
+            f"[compare_node] LLM evaluation failed ({type(exc).__name__}: {exc}). "
+            "Falling back to sufficient=True to attempt answer."
+        )
+        is_sufficient = True  # Graceful fallback: try to answer with what we have
 
     steps.append(f"compare: context is {'sufficient' if is_sufficient else 'insufficient'}")
     return {
@@ -102,7 +124,9 @@ Context:
     }
 
 
-async def summarize_node(state: AgentState) -> dict[str, Any]:
+async def summarize_node(
+    state: AgentState, config: RunnableConfig | None = None
+) -> dict[str, Any]:
     """Generate a grounded answer with inline citations."""
     logger.debug("[summarize_node] generating answer")
 
@@ -135,9 +159,14 @@ Context:
 
 Answer:"""
 
-    response = await _llm.ainvoke(prompt)
-    answer = response.content.strip()
-    steps.append("summarize: generated grounded answer with citations")
+    try:
+        response = await _llm.ainvoke(prompt, config=config) if config else await _llm.ainvoke(prompt)
+        answer = response.content.strip()
+        steps.append("summarize: generated grounded answer with citations")
+    except Exception as exc:
+        logger.warning(f"[summarize_node] LLM generation failed ({type(exc).__name__}: {exc}).")
+        answer = "I'm sorry, I encountered an error while generating the answer. This might be due to API rate limits (quota exceeded). Please try again later."
+        steps.append("summarize: failed to generate answer due to error")
 
     return {
         "answer": answer,
@@ -146,7 +175,9 @@ Answer:"""
     }
 
 
-async def clarify_node(state: AgentState) -> dict[str, Any]:
+async def clarify_node(
+    state: AgentState, config: RunnableConfig | None = None
+) -> dict[str, Any]:
     """Generate a clarifying question when context is insufficient."""
     logger.debug("[clarify_node] generating clarification question")
 
@@ -159,8 +190,12 @@ async def clarify_node(state: AgentState) -> dict[str, Any]:
     if not clarification:
         prompt = f"""The user asked: {state['query']}
 No relevant documents were found. Generate a helpful clarifying question to guide the user."""
-        response = await _llm.ainvoke(prompt)
-        clarification = response.content.strip()
+        try:
+            response = await _llm.ainvoke(prompt, config=config) if config else await _llm.ainvoke(prompt)
+            clarification = response.content.strip()
+        except Exception as exc:
+            logger.warning(f"[clarify_node] LLM generation failed ({type(exc).__name__}: {exc}).")
+            clarification = "I'm sorry, I couldn't generate a specific clarification question due to a server error. Please try rephrasing your query or providing more context."
 
     steps.append("clarify: generated clarification question")
     return {

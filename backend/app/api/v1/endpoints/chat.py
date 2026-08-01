@@ -43,7 +43,7 @@ async def query(
                 "query": body.query,
                 "session_id": body.session_id or str(uuid.uuid4()),
                 "chat_history": body.chat_history or [],
-                "documents": body.document_ids or [],
+                "document_ids": body.document_ids or [],
             }
         )
         return ChatResponse(

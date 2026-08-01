@@ -45,7 +45,26 @@ async def get_document(document_id: str) -> DocumentResponse:
     response_class=Response,
     summary="Delete a document",
 )
-async def delete_document(document_id: str) -> None:
+async def delete_document(document_id: str, db: DBSession) -> None:
     """Delete a document and its embeddings."""
-    # TODO: Remove from vector store and DB
+    from app.services.retrieval.vector_store import vector_store
+
+    # 1. Fetch document from Postgres
+    doc = await db.get(Document, document_id)
+    if not doc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Document {document_id} not found"
+        )
+
+    # 2. Delete vector chunks from ChromaDB
+    try:
+        vector_store.delete_by_metadata(key="document_id", value=str(document_id))
+    except Exception as e:
+        logger.error(f"Error deleting vectors for {document_id}: {e}")
+
+    # 3. Delete from Postgres
+    await db.delete(doc)
+    await db.commit()
+
     return None

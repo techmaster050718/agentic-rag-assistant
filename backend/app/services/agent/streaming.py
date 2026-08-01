@@ -35,6 +35,8 @@ async def stream_agent_events(
         "iteration": 0,
     }
 
+    final_state: dict[str, Any] = {}
+
     async for event in graph.astream_events(initial_state, version="v2"):
         event_type = event.get("event", "")
         data = event.get("data", {})
@@ -50,18 +52,32 @@ async def stream_agent_events(
                 yield {"type": "step_start", "node": node_name}
 
         elif event_type == "on_chain_end":
-            if node_name in ("memory", "retrieve", "compare", "summarize", "clarify"):
+            # ── BUG FIX: the LangGraph terminal event MUST be checked first,
+            # because both conditions share the same event_type. The previous code
+            # had an unreachable `elif` that silently swallowed the final answer.
+            if node_name == "LangGraph":
+                output = data.get("output", {})
+                final_state = output  # capture for fallback below
+                yield {
+                    "type": "final",
+                    "answer": output.get("answer", ""),
+                    "citations": output.get("citations", []),
+                    "agent_steps": output.get("agent_steps", []),
+                    "session_id": session_id,
+                }
+            elif node_name in ("memory", "retrieve", "compare", "summarize", "clarify"):
                 output = data.get("output", {})
                 steps = output.get("agent_steps", [])
                 yield {"type": "step_end", "node": node_name, "steps": steps}
 
-        elif event_type == "on_chain_end" and node_name == "LangGraph":
-            # Final state
-            output = data.get("output", {})
-            yield {
-                "type": "final",
-                "answer": output.get("answer", ""),
-                "citations": output.get("citations", []),
-                "agent_steps": output.get("agent_steps", []),
-                "session_id": session_id,
-            }
+    # Safety-net: if no LangGraph on_chain_end was caught (version skew / edge case),
+    # emit whatever the final_state had so the frontend always gets an answer.
+    if not final_state and query:
+        logger.warning("[stream_agent_events] No LangGraph terminal event received — emitting empty final.")
+        yield {
+            "type": "final",
+            "answer": "",
+            "citations": [],
+            "agent_steps": [],
+            "session_id": session_id,
+        }
