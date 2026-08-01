@@ -32,6 +32,8 @@ async def memory_node(state: AgentState) -> dict[str, Any]:
     }
 
 
+from app.services.ingestion.embedder import get_embeddings
+
 async def retrieve_node(state: AgentState) -> dict[str, Any]:
     """Embed the query and retrieve relevant chunks from the vector store."""
     logger.debug(f"[retrieve_node] query={state['query'][:80]}")
@@ -40,18 +42,22 @@ async def retrieve_node(state: AgentState) -> dict[str, Any]:
     steps.append("retrieve: embedding query and searching vector store")
 
     try:
+        embeddings_model = get_embeddings()
+        query_embedding = await embeddings_model.aembed_query(state["query"])
+        
         store = vector_store.get_vector_store()
-        results = await store.asimilarity_search_with_relevance_scores(
-            query=state["query"],
-            k=settings.RETRIEVAL_TOP_K,
+        results = store.search(
+            query_embedding=query_embedding,
+            top_k=settings.RETRIEVAL_TOP_K,
         )
+        
         chunks = [
             {
-                "content": doc.page_content,
-                "metadata": doc.metadata,
-                "score": float(score),
+                "content": res["content"],
+                "metadata": res["metadata"],
+                "score": res["score"],
             }
-            for doc, score in results
+            for res in results
         ]
     except Exception as exc:
         logger.warning(f"[retrieve_node] Vector store error: {exc}. Using empty context.")
