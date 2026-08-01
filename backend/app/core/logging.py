@@ -10,9 +10,9 @@ def setup_logging():
             structlog.processors.StackInfoRenderer(),
             structlog.dev.set_exc_info,
             structlog.processors.TimeStamper(fmt="iso"),
-            structlog.dev.ConsoleRenderer() if settings.APP_ENV == "development" else structlog.processors.JSONRenderer()
+            structlog.dev.ConsoleRenderer() if settings.ENVIRONMENT == "development" else structlog.processors.JSONRenderer()
         ],
-        wrapper_class=structlog.make_filtering_bound_logger(logging.getLevelName(settings.LOG_LEVEL)),
+        wrapper_class=structlog.make_filtering_bound_logger(logging.DEBUG),
         context_class=dict,
         logger_factory=structlog.PrintLoggerFactory(),
         cache_logger_on_first_use=False

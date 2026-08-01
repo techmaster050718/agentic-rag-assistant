@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import AnyHttpUrl, Field, PostgresDsn, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -34,10 +34,24 @@ class Settings(BaseSettings):
             return [i.strip() for i in v.split(",")]
         return v
 
-    # Database
-    DATABASE_URL: str = Field(
-        default="postgresql+asyncpg://raguser:ragpassword@localhost:5432/ragdb"
-    )
+    # Database — individual vars injected by docker-compose
+    POSTGRES_USER: str = Field(default="raguser")
+    POSTGRES_PASSWORD: str = Field(default="ragpassword")
+    POSTGRES_HOST: str = Field(default="localhost")
+    POSTGRES_PORT: int = Field(default=5432)
+    POSTGRES_DB: str = Field(default="ragdb")
+    # Assembled DSN — can be overridden directly via DATABASE_URL env var.
+    # When blank, assembled from the POSTGRES_* vars above.
+    DATABASE_URL: str = Field(default="")
+
+    @model_validator(mode="after")
+    def assemble_db_url(self) -> "Settings":
+        if not self.DATABASE_URL:
+            self.DATABASE_URL = (
+                f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
+                f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+            )
+        return self
 
     # Google Gemini
     GOOGLE_API_KEY: str = ""

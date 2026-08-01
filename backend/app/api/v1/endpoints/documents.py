@@ -1,10 +1,8 @@
-from __future__ import annotations
-
 import logging
 import uuid
 from typing import List
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Response, status
 from sqlalchemy import select
 
 from app.schemas.document import DocumentResponse, DocumentListResponse
@@ -40,6 +38,7 @@ async def get_document(document_id: str) -> DocumentResponse:
 @router.delete(
     "/{document_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
     summary="Delete a document",
 )
 async def delete_document(document_id: str) -> None:
