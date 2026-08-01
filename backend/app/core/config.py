@@ -55,7 +55,7 @@ class Settings(BaseSettings):
 
     # Google Gemini
     GOOGLE_API_KEY: str = ""
-    EMBEDDING_MODEL: str = "models/text-embedding-004"
+    EMBEDDING_MODEL: str = "models/gemini-embedding-001"
     LLM_MODEL: str = "gemini-1.5-flash"
     LLM_TEMPERATURE: float = 0.1
 

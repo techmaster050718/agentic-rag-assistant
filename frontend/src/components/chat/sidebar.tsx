@@ -8,7 +8,7 @@ import { useChatStore } from "@/store/chat";
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
-  onClose: () => void;
+  onClose?: () => void;
 }
 
 const navItems = [
@@ -31,12 +31,14 @@ export function Sidebar({ onClose }: SidebarProps) {
           </div>
           <span className="text-sm font-bold text-white">RAG Assistant</span>
         </div>
-        <button
-          onClick={onClose}
-          className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
-        >
-          <X className="w-4 h-4" />
-        </button>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       {/* Navigation */}

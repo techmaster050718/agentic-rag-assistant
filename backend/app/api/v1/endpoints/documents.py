@@ -1,11 +1,11 @@
 import logging
-import uuid
-from typing import List
 
-from fastapi import APIRouter, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
 
-from app.schemas.document import DocumentResponse, DocumentListResponse
+from app.api.deps import DBSession
+from app.models.document import Document
+from app.schemas.document import DocumentListResponse, DocumentResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -16,10 +16,14 @@ router = APIRouter()
     response_model=DocumentListResponse,
     summary="List all ingested documents",
 )
-async def list_documents() -> DocumentListResponse:
+async def list_documents(db: DBSession) -> DocumentListResponse:
     """Return metadata for all ingested documents."""
-    # In a full implementation, this queries PostgreSQL for document metadata
-    return DocumentListResponse(documents=[], total=0)
+    result = await db.execute(select(Document).order_by(Document.created_at.desc()))
+    docs = result.scalars().all()
+    return DocumentListResponse(
+        documents=[DocumentResponse.model_validate(d) for d in docs],
+        total=len(docs),
+    )
 
 
 @router.get(
