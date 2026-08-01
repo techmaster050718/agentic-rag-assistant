@@ -53,7 +53,7 @@ async def process_document(document_id: uuid.UUID, file_path: str, file_type: st
         finally:
             if os.path.exists(file_path): os.remove(file_path)
 
-@router.post("/", response_model=DocumentResponse, status_code=202)
+@router.post("/upload", response_model=DocumentResponse, status_code=202)
 @limiter.limit("10/minute")
 async def ingest_document(request: Request, background_tasks: BackgroundTasks, file: UploadFile = File(...), db: AsyncSession = Depends(get_db)):
     if not file.filename: raise HTTPException(status_code=400, detail="No filename provided")

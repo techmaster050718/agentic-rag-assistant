@@ -58,3 +58,7 @@ class VectorStore:
         logger.info("Deleted documents from vector store by metadata", key=key, value=value)
 
 vector_store = VectorStore()
+
+def get_vector_store():
+    """Returns the initialized VectorStore instance."""
+    return vector_store
