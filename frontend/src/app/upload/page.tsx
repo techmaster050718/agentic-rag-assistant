@@ -6,7 +6,8 @@ import { UploadZone } from "@/components/documents/upload-zone";
 import { FileUploadItem } from "@/components/documents/file-upload-item";
 import { useFileUpload } from "@/hooks/use-file-upload";
 import { FadeIn } from "@/components/motion/fade-in";
-import { Upload, CheckCircle2 } from "lucide-react";
+import { Upload, CheckCircle2, MessageSquare } from "lucide-react";
+import Link from "next/link";
 
 export default function UploadPage() {
   const { items, addFiles, uploadAll, removeItem } = useFileUpload();
@@ -50,9 +51,18 @@ export default function UploadPage() {
 
             {allDone && (
               <FadeIn>
-                <div className="flex items-center gap-2 text-emerald-400 text-sm font-medium mt-4">
-                  <CheckCircle2 className="w-4 h-4" />
-                  All documents ingested successfully!
+                <div className="p-5 bg-gray-900/50 rounded-xl mt-6 border border-gray-800 flex items-center justify-between">
+                  <div className="flex items-center gap-3 text-emerald-400 text-sm font-medium">
+                    <CheckCircle2 className="w-5 h-5" />
+                    All documents ingested successfully!
+                  </div>
+                  <Link 
+                    href="/chat" 
+                    className="flex items-center gap-2 text-sm bg-violet-600 hover:bg-violet-700 text-white px-5 py-2.5 rounded-lg font-medium transition-colors"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    Go to Chat
+                  </Link>
                 </div>
               </FadeIn>
             )}

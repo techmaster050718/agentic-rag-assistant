@@ -41,14 +41,14 @@ async def process_document(document_id: uuid.UUID, file_path: str, file_type: st
             
             doc = await db.get(DocumentModel, document_id)
             if doc:
-                doc.status = DocumentStatus.COMPLETED
+                doc.status = DocumentStatus.ingested
                 await db.commit()
             logger.info("Document processed successfully", document_id=document_id)
         except Exception as e:
             logger.error("Failed to process document", document_id=document_id, error=str(e))
             doc = await db.get(DocumentModel, document_id)
             if doc:
-                doc.status = DocumentStatus.FAILED
+                doc.status = DocumentStatus.failed
                 await db.commit()
         finally:
             if os.path.exists(file_path): os.remove(file_path)
@@ -64,7 +64,7 @@ async def ingest_document(request: Request, background_tasks: BackgroundTasks, f
     file_path = os.path.join(UPLOAD_DIR, f"{file_id}.{file_ext}")
     with open(file_path, "wb") as buffer: shutil.copyfileobj(file.file, buffer)
     
-    new_doc = DocumentModel(title=file.filename, filename=f"{file_id}.{file_ext}", file_type=file_ext, status=DocumentStatus.PROCESSING)
+    new_doc = DocumentModel(filename=f"{file_id}.{file_ext}", content_type=file_ext, status=DocumentStatus.pending)
     db.add(new_doc)
     await db.commit()
     await db.refresh(new_doc)
