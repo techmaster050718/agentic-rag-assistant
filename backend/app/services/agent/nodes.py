@@ -89,7 +89,7 @@ Query: {state['query']}
 Context:
 {context}
 
-Respond with exactly one word: SUFFICIENT or INSUFFICIENT."""
+# Removed prefix instruction"""
 
     response = await _llm.ainvoke(prompt)
     verdict = response.content.strip().upper()

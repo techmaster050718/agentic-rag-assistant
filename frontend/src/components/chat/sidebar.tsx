@@ -27,7 +27,13 @@ export function Sidebar({ onClose }: SidebarProps) {
       <div className="flex items-center justify-between px-4 py-4 border-b border-gray-800">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center">
-            <Sparkles className="w-4 h-4 text-white" />
+            <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2 2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" />
+              <path d="M4 14a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4z" />
+              <line x1="8" y1="18" x2="8" y2="18.01" />
+              <line x1="16" y1="18" x2="16" y2="18.01" />
+              <path d="M12 8v4" />
+            </svg>
           </div>
           <span className="text-sm font-bold text-white">RAG Assistant</span>
         </div>
