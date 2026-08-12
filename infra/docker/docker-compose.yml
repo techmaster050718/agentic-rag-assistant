@@ -19,20 +19,6 @@ services:
     networks:
       - rag-network
 
-  chromadb:
-    image: chromadb/chroma:0.4.24
-    container_name: rag-chromadb
-    ports:
-      - "8002:8000"
-    volumes:
-      - chroma_data:/chroma/chroma
-    environment:
-      - IS_PERSISTENT=TRUE
-      - ANONYMIZED_TELEMETRY=FALSE
-    restart: unless-stopped
-    networks:
-      - rag-network
-
   backend:
     build:
       context: ../../backend
@@ -51,10 +37,8 @@ services:
       - POSTGRES_DB=${POSTGRES_DB:-rag_db}
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
-      - VECTOR_STORE_PROVIDER=${VECTOR_STORE_PROVIDER:-chroma}
-      - CHROMA_HOST=chromadb
-      - CHROMA_PORT=8000
-      - CHROMA_COLLECTION=${CHROMA_COLLECTION:-company_policies}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
       - EMBEDDING_MODEL=${EMBEDDING_MODEL:-models/gemini-embedding-001}
       - LLM_MODEL=${LLM_MODEL:-gemini-3.5-flash}
@@ -70,7 +54,6 @@ services:
       - backend_uploads:/app/uploads
     depends_on:
       - postgres
-      - chromadb
     healthcheck:
       test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')" ]
       interval: 30s
@@ -105,8 +88,6 @@ services:
 
 volumes:
   postgres_data:
-    driver: local
-  chroma_data:
     driver: local
   backend_uploads:
     driver: local

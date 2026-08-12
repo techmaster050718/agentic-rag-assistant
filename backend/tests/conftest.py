@@ -10,13 +10,12 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 os.environ["APP_ENV"] = "testing"
 os.environ["OPENAI_API_KEY"] = "sk-test-key-for-testing-only"
 os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///./test.db"
-os.environ["VECTOR_STORE_PROVIDER"] = "chroma"
-os.environ["CHROMA_HOST"] = "localhost"
-os.environ["CHROMA_PORT"] = "8001"
+os.environ["SUPABASE_URL"] = "https://test.supabase.co"
+os.environ["SUPABASE_SERVICE_KEY"] = "test-service-key"
 
 from app.main import app
 from app.db.session import Base, get_db
-from app.services.retrieval.vector_store import VectorStore
+from app.services.retrieval.vector_store import VectorStoreAdapter
 
 
 # --- Database Fixtures ---
@@ -82,10 +81,10 @@ def mock_embeddings():
 
 @pytest.fixture
 def mock_vector_store():
-    """Mock the ChromaDB vector store."""
+    """Mock the Supabase vector store."""
     with patch("app.services.retrieval.vector_store.vector_store") as mock:
-        mock.add_documents = MagicMock()
-        mock.search = MagicMock(return_value=[
+        mock.add_documents = AsyncMock()
+        mock.search = AsyncMock(return_value=[
             {
                 "id": "chunk-1",
                 "content": "Employees may work remotely up to 3 days per week.",
@@ -99,7 +98,7 @@ def mock_vector_store():
                 "score": 0.85,
             },
         ])
-        mock.delete_by_metadata = MagicMock()
+        mock.delete_by_metadata = AsyncMock()
         yield mock
 
 

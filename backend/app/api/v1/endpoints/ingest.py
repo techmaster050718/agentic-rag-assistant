@@ -37,7 +37,7 @@ async def process_document(document_id: uuid.UUID, file_path: str, file_type: st
                 metadatas.append(meta)
             
             embeddings = await embeddings_model.aembed_documents(texts)
-            vector_store.add_documents(ids=chunk_ids, embeddings=embeddings, documents=texts, metadatas=metadatas)
+            await vector_store.add_documents(ids=chunk_ids, embeddings=embeddings, documents=texts, metadatas=metadatas)
             
             doc = await db.get(DocumentModel, document_id)
             if doc:

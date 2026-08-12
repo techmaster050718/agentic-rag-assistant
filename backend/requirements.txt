@@ -16,7 +16,7 @@ langchain-core==0.2.16
 langchain-google-genai==1.0.7
 langchain-community==0.2.6
 langgraph==0.1.8
-chromadb==0.4.24
+supabase==2.3.4
 
 # --- Utilities & Security ---
 python-dotenv==1.0.1

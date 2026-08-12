@@ -65,9 +65,8 @@ class Settings(BaseSettings):
     LANGCHAIN_PROJECT: str = "agentic-rag"
 
     # Vector store
-    CHROMA_HOST: str = "localhost"
-    CHROMA_PORT: int = 8001
-    CHROMA_COLLECTION_NAME: str = "documents"
+    SUPABASE_URL: str = Field(default="")
+    SUPABASE_SERVICE_KEY: str = Field(default="")
 
     # Chunking
     CHUNK_SIZE: int = 1000

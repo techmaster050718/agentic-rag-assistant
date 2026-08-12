@@ -51,7 +51,7 @@ async def retrieve_node(state: AgentState) -> dict[str, Any]:
         store = vector_store.get_vector_store()
         document_ids = state.get("document_ids", [])
         where = {"document_id": {"$in": document_ids}} if document_ids else None
-        results = store.search(
+        results = await store.search(
             query_embedding=query_embedding,
             top_k=settings.RETRIEVAL_TOP_K,
             where=where,
@@ -90,7 +90,7 @@ async def compare_node(state: AgentState) -> dict[str, Any]:
 
     # ── Fast-path: skip LLM if any chunk has a good similarity score.
     # This avoids burning API quota on a binary yes/no that cosine similarity
-    # already answers reliably. Score is 1 - cosine_distance (ChromaDB cosine space).
+    # already answers reliably. Score is 1 - cosine_distance (pgvector cosine space).
     best_score = max((c.get("score", 0.0) for c in chunks), default=0.0)
     if best_score >= 0.3:
         logger.debug(f"[compare_node] Fast-path: best_score={best_score:.3f} → sufficient")

@@ -57,9 +57,9 @@ async def delete_document(document_id: str, db: DBSession) -> None:
             detail=f"Document {document_id} not found"
         )
 
-    # 2. Delete vector chunks from ChromaDB
+    # 2. Delete vector chunks from Supabase
     try:
-        vector_store.delete_by_metadata(key="document_id", value=str(document_id))
+        await vector_store.delete_by_metadata(key="document_id", value=str(document_id))
     except Exception as e:
         logger.error(f"Error deleting vectors for {document_id}: {e}")
 
