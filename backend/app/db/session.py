@@ -5,13 +5,14 @@ from sqlalchemy.orm import DeclarativeBase
 
 from app.core.config import settings
 
+# YAHAN connect_args={"statement_cache_size": 0} HONA ZAROORI HAI
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=settings.DEBUG,
     pool_pre_ping=True,
     pool_size=10,
     max_overflow=20,
-    connect_args={"statement_cache_size": 0},  # <-- Python comment # se lagta hai
+    connect_args={"statement_cache_size": 0},  # <--- YE LINE BILKUL SAHI HONI CHAHIYE
 )
 
 AsyncSessionLocal = async_sessionmaker(
