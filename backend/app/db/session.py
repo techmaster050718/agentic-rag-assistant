@@ -11,8 +11,8 @@ engine = create_async_engine(
     pool_pre_ping=True,
     pool_size=10,
     max_overflow=20,
-    connect_args={"statement_cache_size": 0},  # <--- YE LINE ADD KI HAI (PgBouncer Fix)
-) // change 
+    connect_args={"statement_cache_size": 0},  # <-- Python comment # se lagta hai
+)
 
 AsyncSessionLocal = async_sessionmaker(
     engine,
