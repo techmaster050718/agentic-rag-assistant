@@ -5,7 +5,7 @@ from sqlalchemy.orm import DeclarativeBase
 
 from app.core.config import settings
 
-# FORCE UPDATE: PgBouncer compatibility fix
+# SUPABASE POOLER COMPATIBLE ENGINE
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=settings.DEBUG,
