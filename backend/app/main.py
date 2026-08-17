@@ -55,11 +55,11 @@ def create_application() -> FastAPI:
     application.state.limiter = limiter
     application.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-    # CORS - UPDATED TO ALLOW ALL ORIGINS (Including Vercel)
+        # CORS - FINAL FIXED VERSION
     application.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],  # <-- YEH CHANGE KIYA HAI (Pehle settings.ALLOWED_ORIGINS tha)
-        allow_credentials=True,
+        allow_origins=["*"],
+        allow_credentials=False,  # <-- YEH FALSE HONA ZAROORI HAI JAB "*" USE KAR RAHE HO
         allow_methods=["*"],
         allow_headers=["*"],
     )
