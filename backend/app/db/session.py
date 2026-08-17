@@ -5,14 +5,14 @@ from sqlalchemy.orm import DeclarativeBase
 
 from app.core.config import settings
 
-# YAHAN connect_args={"statement_cache_size": 0} HONA ZAROORI HAI
+# FORCE UPDATE: PgBouncer compatibility fix
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=settings.DEBUG,
     pool_pre_ping=True,
     pool_size=10,
     max_overflow=20,
-    connect_args={"statement_cache_size": 0},  # <--- YE LINE BILKUL SAHI HONI CHAHIYE
+    connect_args={"statement_cache_size": 0},  # <--- YE LINE 100% HONI CHAHIYE
 )
 
 AsyncSessionLocal = async_sessionmaker(
